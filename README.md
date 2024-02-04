@@ -1,11 +1,12 @@
 # Python開発環境
 汎用のPython開発環境リポジトリです。
 
-## 作成したリポジトリへの初回プッシュ
+## 初回
 Githubでリポジトリを作成しておく。
 ```
-$ git remote add origin {リポジトリのエンドポイント}
-$ git push -u origin master --force
+$ git clone git@github.com:yuji-sniper/python.git
+$ git remote set-url origin {リポジトリのエンドポイント}
+$ git push -u origin master
 ```
 
 ## 初回環境構築
