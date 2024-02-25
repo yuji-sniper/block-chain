@@ -6,6 +6,10 @@ authors = ["Your Name <you@example.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.11"
+base58 = "^2.1.1"
+ecdsa = "^0.18.0"
+flask = "^3.0.2"
+requests = "^2.31.0"
 
 
 [build-system]
