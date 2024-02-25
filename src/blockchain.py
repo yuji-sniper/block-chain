@@ -12,6 +12,8 @@ logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 class BlockChain:
     
+    MINING_DIFFICULTY = 3
+    
     def __init__(self):
         self.transaction_pool = []
         self.chain = []
@@ -40,10 +42,24 @@ class BlockChain:
         })
         self.transaction_pool.append(transaction)
         return True
+    
+    def proof_of_work(self):
+        last_block = self.chain[-1]
+        transactions = self.transaction_pool.copy()
+        previous_hash = self.hash(last_block)
+        nonce = 0
+        while self.valid_proof(transactions, previous_hash, nonce) is False:
+            nonce += 1
+        return nonce
 
-
-def pprint(obj):
-    print(json.dumps(obj, indent=2))
+    def valid_proof(self, transactions, previous_hash, nonce, difficulty=MINING_DIFFICULTY):
+        guess = utils.sorted_dict({
+            'transactions': transactions,
+            'nonce': nonce,
+            'previous_hash': previous_hash
+        })
+        guess_hash = self.hash(guess)
+        return guess_hash[:difficulty] == '0' * difficulty
 
 
 if __name__ == '__main__':
@@ -52,6 +68,6 @@ if __name__ == '__main__':
     bc.add_transaction('A', 'B', 1.0)
     bc.add_transaction('B', 'C', 2.0)
     previous_hash = bc.hash(bc.chain[-1])
-    bc.create_block(0, previous_hash)
-    pprint(bc.chain)
-    
+    nonce = bc.proof_of_work()
+    bc.create_block(nonce, previous_hash)
+    utils.pprint(bc.chain)
