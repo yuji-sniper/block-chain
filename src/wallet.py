@@ -5,6 +5,8 @@ import hashlib
 
 from ecdsa import SigningKey, NIST256p
 
+import utils
+
 class Wallet:
     def __init__(self):
         self._private_key = SigningKey.generate(curve=NIST256p)
@@ -52,8 +54,33 @@ class Wallet:
         return blockchain_address
 
 
+class Transaction:
+    def __init__(self, sender_private_key, sender_public_key, sender_blockchain_address, recipient_blockchain_address, amount):
+        self._sender_private_key = sender_private_key
+        self._sender_public_key = sender_public_key
+        self._sender_blockchain_address = sender_blockchain_address
+        self._recipient_blockchain_address = recipient_blockchain_address
+        self._amount = amount
+    
+    def generate_signature(self):
+        sha256 = hashlib.sha256()
+        transaction = utils.sorted_dict({
+            'sender_blockchain_address': self._sender_blockchain_address,
+            'recipient_blockchain_address': self._recipient_blockchain_address,
+            'amount': float(self._amount)
+        })
+        sha256.update(str(transaction).encode('utf-8'))
+        message = sha256.digest()
+        private_key = SigningKey.from_string(bytes().fromhex(self._sender_private_key), curve=NIST256p)
+        private_key_sign = private_key.sign(message)
+        signature = private_key_sign.hex()
+        return signature
+
+
 if __name__ == '__main__':
     wallet = Wallet()
     print(wallet.private_key)
     print(wallet.public_key)
     print(wallet.blockchain_address)
+    t = Transaction(wallet.private_key, wallet.public_key, wallet.blockchain_address, 'B', 5.0)
+    print(t.generate_signature())
