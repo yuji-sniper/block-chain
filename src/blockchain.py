@@ -4,6 +4,8 @@ import logging
 import sys
 import time
 
+from ecdsa import VerifyingKey, NIST256p
+
 import utils
 
 
@@ -37,14 +39,30 @@ class BlockChain:
         block_string = json.dumps(block, sort_keys=True)
         return hashlib.sha256(block_string.encode()).hexdigest()
     
-    def add_transaction(self, sender, recipient, amount):
+    def add_transaction(self, sender, recipient, amount, sender_public_key=None, signature=None):
         transaction = utils.sorted_dict({
-            'sender': sender,
-            'recipient': recipient,
+            'sender_blockchain_address': sender,
+            'recipient_blockchain_address': recipient,
             'amount': float(amount)
         })
-        self.transaction_pool.append(transaction)
-        return True
+        if sender == self.MINING_SENDER:
+            self.transaction_pool.append(transaction)
+            return True
+        if self.verify_transaction_signature(sender_public_key, signature, transaction):
+            # if self.calculate_total_amount(sender) < float(amount):
+            #     return False
+            self.transaction_pool.append(transaction)
+            return True
+        return False
+    
+    def verify_transaction_signature(self, sender_public_key, signature, transaction):
+        sha256 = hashlib.sha256()
+        sha256.update(str(transaction).encode('utf-8'))
+        message = sha256.digest()
+        signature_bytes = bytes().fromhex(signature)
+        verifying_key = VerifyingKey.from_string(bytes().fromhex(sender_public_key), curve=NIST256p)
+        verified_key = verifying_key.verify(signature_bytes, message)
+        return verified_key
     
     def proof_of_work(self):
         last_block = self.chain[-1]
@@ -82,24 +100,8 @@ class BlockChain:
         for block in self.chain:
             for transaction in block['transactions']:
                 amount = transaction['amount']
-                if blockchain_address == transaction['recipient']:
+                if blockchain_address == transaction['recipient_blockchain_address']:
                     total_amount += amount
-                if blockchain_address == transaction['sender']:
+                if blockchain_address == transaction['sender_blockchain_address']:
                     total_amount -= amount
         return total_amount
-
-
-if __name__ == '__main__':
-    my_blockchain_address = 'my_blockchain_address'
-    bc = BlockChain(blockchain_address=my_blockchain_address)
-    
-    bc.add_transaction('A', 'B', 5.0)
-    bc.mining()
-    utils.pprint(bc.chain)
-    
-    bc.add_transaction('C', 'D', 6.0)
-    bc.add_transaction('X', 'Y', 7.0)
-    bc.mining()
-    utils.pprint(bc.chain)
-
-    print(bc.calculate_total_amount(my_blockchain_address))
